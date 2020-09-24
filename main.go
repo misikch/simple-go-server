@@ -21,10 +21,27 @@ func main() {
 		port = "8080"
 	}
 
+	initLogger()
+
 	log.Println("** Service Started on Port " + port + " **")
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatal(err)
 	}
+}
+
+//multiple output for logger
+func initLogger() {
+	logFile, err := os.Create("/go/src/simple-go-server/var/log/access1.log")
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Log file: %v\n", logFile.Name())
+
+	m := io.MultiWriter(os.Stdout, logFile)
+
+	log.SetOutput(m)
 }
 
 func ExampleHandler(w http.ResponseWriter, r *http.Request) {

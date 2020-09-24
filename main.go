@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -38,6 +40,7 @@ func LogRequest(r *http.Request) {
 func formatRequest(r *http.Request) string {
 	// Create return string
 	var request []string
+
 	// Add the request string
 	url := fmt.Sprintf("%v %v %v", r.Method, r.URL, r.Proto)
 	request = append(request, url)
@@ -45,18 +48,20 @@ func formatRequest(r *http.Request) string {
 	request = append(request, fmt.Sprintf("Host: %v", r.Host))
 	// Loop through headers
 	for name, headers := range r.Header {
-		name = strings.ToLower(name)
 		for _, h := range headers {
-			request = append(request, fmt.Sprintf("%v: %v\n", name, h))
+			request = append(request, fmt.Sprintf("%s: %s", name, h))
 		}
 	}
 
-	// If this is a POST, add post data
-	if r.Method == "POST" {
-		r.ParseForm()
-		request = append(request, "\n")
-		request = append(request, r.Form.Encode())
+	buf, bodyErr := ioutil.ReadAll(r.Body)
+	if bodyErr != nil {
+		log.Println("bodyErr ", bodyErr.Error())
+
+		return strings.Join(request, "\n")
 	}
-	// Return the request as a string
+
+	rdr1 := ioutil.NopCloser(bytes.NewBuffer(buf))
+	request = append(request, fmt.Sprintf("BODY: %v\n---------------\n", rdr1))
+
 	return strings.Join(request, "\n")
 }
